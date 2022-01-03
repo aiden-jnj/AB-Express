@@ -1,0 +1,32 @@
+{
+  "name": "ab-express",
+  "version": "0.0.1",
+  "description": "AB-Express is library that provides frequently used features on `Express` server.",
+  "keywords": [
+    "backend",
+    "common",
+    "express",
+    "library",
+    "log",
+    "logger",
+    "node",
+    "winston"
+  ],
+  "author": "Aiden <bokjaeoh@gmail.com>",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aiden-jnj/AB-Express.git"
+  },
+  "homepage": "https://github.com/aiden-jnj/AB-Express#readme",
+  "bugs": {
+    "url": "https://github.com/aiden-jnj/AB-Express/issues"
+  },
+  "engines": {
+    "node": ">= 12.14.1"
+  },
+  "main": "src/index.js",
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {}
+}
