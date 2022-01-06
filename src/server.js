@@ -1,5 +1,8 @@
 const compression = require('compression')
+const cookieParser = require('cookie-parser')
 const express = require('express')
+const session = require('express-session')
+const timeout = require('connect-timeout')
 
 
 const { Router } = express
@@ -44,7 +47,21 @@ const setExpress = (app, options) => {
  * @private
  * @param {Express} app Created `express` server.
  * @param {Object} [options=undefined] Options for creating server.
+ * @param {Object} [options.session=undefined] Options for `express` session.
+ * @param {Object} [options.session.cookie=undefined] Settings object for the session ID cookie.
+ * @param {String} [options.session.cookie.domain=undefined] Domain to which cookie will be applied.
+ * By Default, no domain is set, and most clients will consider the cookie to apply to only current domain.
+ * @param {Boolean} [options.session.cookie.httpOnly=true] Cookie allows to be sent only throuth HTTP(s), not client
+ * JavaScript which can be protected from the Cross-Site Scripting(XSS) attack.
+ * @param {Number} [options.session.cookie.maxAge=null] Specifies the number(in milliseconds) to use when calculating
+ * expires attribute of cookie.
+ * @param {String} [options.session.cookie.path='/'] Specifies value for path of cookie.
+ * @param {Boolean} [options.session.cookie.secure=false] Specifies boolean value for secure attribute of cookie.
+ * @param {String} [options.session.secret] Secret string used to sign session ID cookie.
+ * @param {Number|String} [options.timeout='5s'] Time(milliseconds) to use for request timeout.
+ * Time can be specified as string allowed by th `ms` module.
  * @param {Boolean} [options.useCompression=true] Whether to enable `response` compression for `request`.
+ * @param {Boolean} [options.useCookieParser=true] Whether to use `cookie-parser` library for `request` cookie parsing.
  * @param {Boolean} [options.useReqJSON=true] Whether to parse `request` into JSON format based on `body-parser`.
  * @param {Boolean} [options.useURLEncodeExtended=true] Whether to use URL query string data parsing as `qs` library.
  * If `true`, `qs` library that allows JSON nesting is used to analyze `reauest` query string.
@@ -54,12 +71,18 @@ const useExpress = (app, options) => {
   if (!options || options.useCompression !== false) {
     app.use(compression())
   }
+  if (!options || options.useCookieParser !== false) {
+    app.use(cookieParser())
+  }
   if (!options || options.useReqJSON !== false) {
     app.use(express.json())
   }
   if (!options || options.useURLEncodeExtended !== false) {
     app.use(express.urlencoded({ extended: true }))
   }
+
+  app.use(session(options && options.session || {}))
+  app.use(timeout(options && options.timeout || '5s'))
 }
 
 /**
@@ -68,9 +91,23 @@ const useExpress = (app, options) => {
  * @public
  * @param {Object} [options=undefined] Options for creating server.
  * @param {Number|String} [options.port=80] Port on which server will listen.
+ * @param {Object} [options.session=undefined] Options for `express` session.
+ * @param {Object} [options.session.cookie=undefined] Settings object for the session ID cookie.
+ * @param {String} [options.session.cookie.domain=undefined] Domain to which cookie will be applied.
+ * By Default, no domain is set, and most clients will consider the cookie to apply to only current domain.
+ * @param {Boolean} [options.session.cookie.httpOnly=true] Cookie allows to be sent only throuth HTTP(s), not client
+ * JavaScript which can be protected from the Cross-Site Scripting(XSS) attack.
+ * @param {Number} [options.session.cookie.maxAge=null] Specifies the number(in milliseconds) to use when calculating
+ * expires attribute of cookie.
+ * @param {String} [options.session.cookie.path='/'] Specifies value for path of cookie.
+ * @param {Boolean} [options.session.cookie.secure=false] Specifies boolean value for secure attribute of cookie.
+ * @param {String} [options.session.secret] Secret string used to sign session ID cookie.
+ * @param {Number|String} [options.timeout='5s'] Time(milliseconds) to use for request timeout.
+ * Time can be specified as string allowed by th `ms` module.
  * @param {Boolean} [options.trustProxy=false] If you have node.js behind proxy, need to set
  * `trust proxy` in `express`.
  * @param {Boolean} [options.useCompression=true] Whether to enable `response` compression for `request`.
+ * @param {Boolean} [options.useCookieParser=true] Whether to use `cookie-parser` library for `request` cookie parsing.
  * @param {Boolean} [options.useReqJSON=true] Whether to parse `request` into JSON format based on `body-parser`.
  * @param {Boolean} [options.useURLEncodeExtended=true] Whether to use URL query string data parsing as `qs` library.
  * If `true`, `qs` library that allows JSON nesting is used to analyze `reauest` query string.
