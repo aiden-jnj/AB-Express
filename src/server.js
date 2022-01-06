@@ -1,3 +1,4 @@
+const compression = require('compression')
 const express = require('express')
 
 
@@ -27,8 +28,8 @@ const getPort = options => {
  * @param {Express} app Created `express` server.
  * @param {Object} [options=undefined] Options for creating server.
  * @param {Number|String} [options.port=80] Port on which server will listen.
- * @param {Boolean} [options.trustProxy=false] If you have node.js behind proxy,
- *  need to set `trust proxy` in `express`.
+ * @param {Boolean} [options.trustProxy=false] If you have node.js behind proxy, need to set
+ * `trust proxy` in `express`.
  * @param {String} [options.viewEngine='pug'] View engine to use in `express`.
  */
 const setExpress = (app, options) => {
@@ -43,9 +44,22 @@ const setExpress = (app, options) => {
  * @private
  * @param {Express} app Created `express` server.
  * @param {Object} [options=undefined] Options for creating server.
+ * @param {Boolean} [options.useCompression=true] Whether to enable `response` compression for `request`.
+ * @param {Boolean} [options.useReqJSON=true] Whether to parse `request` into JSON format based on `body-parser`.
+ * @param {Boolean} [options.useURLEncodeExtended=true] Whether to use URL query string data parsing as `qs` library.
+ * If `true`, `qs` library that allows JSON nesting is used to analyze `reauest` query string.
+ * If `false`, `querystring` library is used to analyze `reauest` query string.
  */
 const useExpress = (app, options) => {
-  app.use(express.urlencoded({ extended: true }))
+  if (!options || options.useCompression !== false) {
+    app.use(compression())
+  }
+  if (!options || options.useReqJSON !== false) {
+    app.use(express.json())
+  }
+  if (!options || options.useURLEncodeExtended !== false) {
+    app.use(express.urlencoded({ extended: true }))
+  }
 }
 
 /**
@@ -53,6 +67,15 @@ const useExpress = (app, options) => {
  *
  * @public
  * @param {Object} [options=undefined] Options for creating server.
+ * @param {Number|String} [options.port=80] Port on which server will listen.
+ * @param {Boolean} [options.trustProxy=false] If you have node.js behind proxy, need to set
+ * `trust proxy` in `express`.
+ * @param {Boolean} [options.useCompression=true] Whether to enable `response` compression for `request`.
+ * @param {Boolean} [options.useReqJSON=true] Whether to parse `request` into JSON format based on `body-parser`.
+ * @param {Boolean} [options.useURLEncodeExtended=true] Whether to use URL query string data parsing as `qs` library.
+ * If `true`, `qs` library that allows JSON nesting is used to analyze `reauest` query string.
+ * If `false`, `querystring` library is used to analyze `reauest` query string.
+ * @param {String} [options.viewEngine='pug'] View engine to use in `express`.
  * @returns {Express} Express server created using passed options.
  */
 const createServer = options => {
