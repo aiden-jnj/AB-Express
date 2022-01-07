@@ -110,9 +110,7 @@ const logTransports = options => {
     )
   }
 
-  if (process.env.NODE_ENV === 'develop') {
-    transports.push(new winston.transports.Console({ ...option, level: 'silly' }))
-  }
+  transports.push(new winston.transports.Console({ ...option, level: 'silly' }))
 
   return transports
 }

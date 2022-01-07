@@ -3,6 +3,7 @@ const timeout = require('connect-timeout')
 const cookieParser = require('cookie-parser')
 const express = require('express')
 const session = require('express-session')
+const http = require('http')
 const morgan = require('morgan')
 
 
@@ -48,8 +49,8 @@ const setExpress = (app, options) => {
  * @param {Express} app Created `express` server.
  * @param {Object} [options=undefined] Options for creating server.
  * @param {winston.Logger} [options.logger=undefined] Logger for log output with `winston`.
- * @param {Object} [options.session=undefined] Options for `express` session.
- * @param {Object} [options.session.cookie=undefined] Settings object for the session ID cookie.
+ * @param {Object} [options.session=undefined] Options for `express` `session`.
+ * @param {Object} [options.session.cookie=undefined] Settings object for the `session` ID cookie.
  * @param {String} [options.session.cookie.domain=undefined] Domain to which cookie will be applied.
  * By Default, no domain is set, and most clients will consider the cookie to apply to only current domain.
  * @param {Boolean} [options.session.cookie.httpOnly=true] Cookie allows to be sent only throuth HTTP(s), not client
@@ -58,7 +59,11 @@ const setExpress = (app, options) => {
  * expires attribute of cookie.
  * @param {String} [options.session.cookie.path='/'] Specifies value for path of cookie.
  * @param {Boolean} [options.session.cookie.secure=false] Specifies boolean value for secure attribute of cookie.
- * @param {String} [options.session.secret] Secret string used to sign session ID cookie.
+ * @param {Boolean} [options.session.resave=false] Forces the `session` to be saved back to the `session` store, even if
+ * `session` was never modified during the `request`.
+ * @param {Boolean} [options.session.saveUninitialized=true] Forces a `session` that is "uninitialized" to be saved
+ * to store.
+ * @param {String} [options.session.secret='^^#(^#!$'] Secret string used to sign `session` ID cookie.
  * @param {Number|String} [options.timeout='5s'] Time(milliseconds) to use for request timeout.
  * Time can be specified as string allowed by th `ms` module.
  * @param {Boolean} [options.useCompression=true] Whether to enable `response` compression for `request`.
@@ -69,25 +74,23 @@ const setExpress = (app, options) => {
  * If `false`, `querystring` library is used to analyze `reauest` query string.
  */
 const useExpress = (app, options) => {
-  if (!options || options.useCompression !== false) {
-    app.use(compression())
-  }
-  if (!options || options.useCookieParser !== false) {
-    app.use(cookieParser())
-  }
-  if (!options || options.useReqJSON !== false) {
-    app.use(express.json())
-  }
-  if (!options || options.useURLEncodeExtended !== false) {
-    app.use(express.urlencoded({ extended: true }))
-  }
-
-  app.use(session(options && options.session || {}))
-  app.use(timeout(options && options.timeout || '5s'))
+  if (!options || options.useCompression !== false) app.use(compression())
+  if (!options || options.useCookieParser !== false) app.use(cookieParser())
+  if (!options || options.useReqJSON !== false) app.use(express.json())
+  if (!options || options.useURLEncodeExtended !== false) app.use(express.urlencoded({ extended: true }))
 
   if (options && options.logger && options.logger.stream) {
     app.use(morgan('combined', { stream: options.logger.stream }))
+  } else {
+    app.use(morgan('combined'))
   }
+
+  const optSession = options && options.session || {}
+  if (optSession.resave === undefined) optSession.resave = false
+  if (optSession.saveUninitialized === undefined) optSession.saveUninitialized = true
+  if (optSession.secret === undefined) optSession.secret = '^^#(^#!$'
+  app.use(session(optSession))
+  app.use(timeout(options && options.timeout || '5s'))
 }
 
 /**
@@ -97,8 +100,8 @@ const useExpress = (app, options) => {
  * @param {Object} [options=undefined] Options for creating server.
  * @param {winston.Logger} [options.logger=undefined] Logger for log output with `winston`.
  * @param {Number|String} [options.port=80] Port on which server will listen.
- * @param {Object} [options.session=undefined] Options for `express` session.
- * @param {Object} [options.session.cookie=undefined] Settings object for the session ID cookie.
+ * @param {Object} [options.session=undefined] Options for `express` `session`.
+ * @param {Object} [options.session.cookie=undefined] Settings object for the `session` ID cookie.
  * @param {String} [options.session.cookie.domain=undefined] Domain to which cookie will be applied.
  * By Default, no domain is set, and most clients will consider the cookie to apply to only current domain.
  * @param {Boolean} [options.session.cookie.httpOnly=true] Cookie allows to be sent only throuth HTTP(s), not client
@@ -107,7 +110,11 @@ const useExpress = (app, options) => {
  * expires attribute of cookie.
  * @param {String} [options.session.cookie.path='/'] Specifies value for path of cookie.
  * @param {Boolean} [options.session.cookie.secure=false] Specifies boolean value for secure attribute of cookie.
- * @param {String} [options.session.secret] Secret string used to sign session ID cookie.
+ * @param {Boolean} [options.session.resave=false] Forces the `session` to be saved back to the `session` store, even if
+ * `session` was never modified during the `request`.
+ * @param {Boolean} [options.session.saveUninitialized=true] Forces a `session` that is "uninitialized" to be saved
+ * to store.
+ * @param {String} [options.session.secret='^^#(^#!$'] Secret string used to sign `session` ID cookie.
  * @param {Number|String} [options.timeout='5s'] Time(milliseconds) to use for request timeout.
  * Time can be specified as string allowed by th `ms` module.
  * @param {Boolean} [options.trustProxy=false] If you have node.js behind proxy, need to set `trust proxy` in `express`.
@@ -124,6 +131,38 @@ const createServer = options => {
   const app = express()
   setExpress(app, options)
   useExpress(app, options)
+
+  const logger = options && options.logger || console
+  const server = http.createServer(app)
+  const port = getPort(options)
+  server.listen(port)
+
+  server.on('error', error => {
+    if (error.syscall !== 'listen') {
+      error && error.message && logger.error && logger.error(`Server error: ${error.message}`)
+      throw error
+    }
+
+    const bind = typeof port === 'string' ? `namepipe ${port}` : `${port} port`
+    switch (error.code) {
+      case 'EACCESS':
+        logger.error && logger.error(`Server error: ${bind} requires elevated privileges.`)
+        process.exit()
+      case 'EADDRINUSE':
+        logger.error && logger.error(`Server error: ${bind} is already in use.`)
+        process.exit()
+      default:
+        error && error.message && logger.error && logger.error(`Server error: ${error.message}`)
+        throw error
+    }
+  })
+
+  server.on('listening', () => {
+    const addr = server.address()
+    const bind = typeof addr === 'string' ? `namepipe ${addr}` : `${addr.port} port`
+    logger.info && logger.info(`Listening on ${bind}`)
+    !logger.info && logger.log(`Listening on ${bind}`)
+  })
 
   return app
 }
