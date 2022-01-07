@@ -31,8 +31,7 @@ const getPort = options => {
  * @param {Express} app Created `express` server.
  * @param {Object} [options=undefined] Options for creating server.
  * @param {Number|String} [options.port=80] Port on which server will listen.
- * @param {Boolean} [options.trustProxy=false] If you have node.js behind proxy, need to set
- * `trust proxy` in `express`.
+ * @param {Boolean} [options.trustProxy=false] If you have node.js behind proxy, need to set `trust proxy` in `express`.
  * @param {String} [options.viewEngine='pug'] View engine to use in `express`.
  */
 const setExpress = (app, options) => {
@@ -104,8 +103,7 @@ const useExpress = (app, options) => {
  * @param {String} [options.session.secret] Secret string used to sign session ID cookie.
  * @param {Number|String} [options.timeout='5s'] Time(milliseconds) to use for request timeout.
  * Time can be specified as string allowed by th `ms` module.
- * @param {Boolean} [options.trustProxy=false] If you have node.js behind proxy, need to set
- * `trust proxy` in `express`.
+ * @param {Boolean} [options.trustProxy=false] If you have node.js behind proxy, need to set `trust proxy` in `express`.
  * @param {Boolean} [options.useCompression=true] Whether to enable `response` compression for `request`.
  * @param {Boolean} [options.useCookieParser=true] Whether to use `cookie-parser` library for `request` cookie parsing.
  * @param {Boolean} [options.useReqJSON=true] Whether to parse `request` into JSON format based on `body-parser`.
@@ -124,4 +122,4 @@ const createServer = options => {
 }
 
 
-module.exports = { createServer, express, Router }
+module.exports = { createServer, Router }
