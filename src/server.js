@@ -1,8 +1,9 @@
 const compression = require('compression')
+const timeout = require('connect-timeout')
 const cookieParser = require('cookie-parser')
 const express = require('express')
 const session = require('express-session')
-const timeout = require('connect-timeout')
+const morgan = require('morgan')
 
 
 const { Router } = express
@@ -46,6 +47,7 @@ const setExpress = (app, options) => {
  * @private
  * @param {Express} app Created `express` server.
  * @param {Object} [options=undefined] Options for creating server.
+ * @param {winston.Logger} [options.logger=undefined] Logger for log output with `winston`.
  * @param {Object} [options.session=undefined] Options for `express` session.
  * @param {Object} [options.session.cookie=undefined] Settings object for the session ID cookie.
  * @param {String} [options.session.cookie.domain=undefined] Domain to which cookie will be applied.
@@ -82,6 +84,10 @@ const useExpress = (app, options) => {
 
   app.use(session(options && options.session || {}))
   app.use(timeout(options && options.timeout || '5s'))
+
+  if (options && options.logger && options.logger.stream) {
+    app.use(morgan('combined', { stream: options.logger.stream }))
+  }
 }
 
 /**
@@ -89,6 +95,7 @@ const useExpress = (app, options) => {
  *
  * @public
  * @param {Object} [options=undefined] Options for creating server.
+ * @param {winston.Logger} [options.logger=undefined] Logger for log output with `winston`.
  * @param {Number|String} [options.port=80] Port on which server will listen.
  * @param {Object} [options.session=undefined] Options for `express` session.
  * @param {Object} [options.session.cookie=undefined] Settings object for the session ID cookie.
