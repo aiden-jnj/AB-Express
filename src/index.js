@@ -5,4 +5,4 @@ const { createServer, Router } = require('./server')
 const ABExpress = { createLogger, createServer, Router }
 
 
-module.export = ABExpress
+module.exports = ABExpress
