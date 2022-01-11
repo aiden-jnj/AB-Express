@@ -1,0 +1,16 @@
+{
+  "name": "abexpress-example-simple",
+  "version": "0.0.1",
+  "description": "",
+  "keywords": [],
+  "author": "Aiden <bokjaeoh@gmail.com>",
+  "license": "ISC",
+  "main": "index.js",
+  "dependencies": {
+    "ab-express": "file:../../"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "node index.js"
+  }
+}
