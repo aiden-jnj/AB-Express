@@ -49,6 +49,7 @@ const setExpress = (app, options) => {
  * @param {Express} app Created `express` server.
  * @param {Object} [options=undefined] Options for creating server.
  * @param {winston.Logger} [options.logger=undefined] Logger for log output with `winston`.
+ * @param {express.Router} [options.router=undefined] Router instance object to use on `express` server.
  * @param {Object} [options.session=undefined] Options for `express` `session`.
  * @param {Object} [options.session.cookie=undefined] Settings object for the `session` ID cookie.
  * @param {String} [options.session.cookie.domain=undefined] Domain to which cookie will be applied.
@@ -64,6 +65,7 @@ const setExpress = (app, options) => {
  * @param {Boolean} [options.session.saveUninitialized=true] Forces a `session` that is "uninitialized" to be saved
  * to store.
  * @param {String} [options.session.secret='^^#(^#!$'] Secret string used to sign `session` ID cookie.
+ * @param {String} [options.static=undefined] Path for static files.
  * @param {Number|String} [options.timeout='5s'] Time(milliseconds) to use for request timeout.
  * Time can be specified as string allowed by th `ms` module.
  * @param {Boolean} [options.useCompression=true] Whether to enable `response` compression for `request`.
@@ -74,10 +76,18 @@ const setExpress = (app, options) => {
  * If `false`, `querystring` library is used to analyze `reauest` query string.
  */
 const useExpress = (app, options) => {
-  if (!options || options.useCompression !== false) app.use(compression())
-  if (!options || options.useCookieParser !== false) app.use(cookieParser())
-  if (!options || options.useReqJSON !== false) app.use(express.json())
-  if (!options || options.useURLEncodeExtended !== false) app.use(express.urlencoded({ extended: true }))
+  if (!options || options.useCompression !== false) {
+    app.use(compression())
+  }
+  if (!options || options.useCookieParser !== false) {
+    app.use(cookieParser())
+  }
+  if (!options || options.useReqJSON !== false) {
+    app.use(express.json())
+  }
+  if (!options || options.useURLEncodeExtended !== false) {
+    app.use(express.urlencoded({ extended: true }))
+  }
 
   if (options && options.logger && options.logger.stream) {
     app.use(morgan('combined', { stream: options.logger.stream }))
@@ -91,6 +101,16 @@ const useExpress = (app, options) => {
   if (optSession.secret === undefined) optSession.secret = '^^#(^#!$'
   app.use(session(optSession))
   app.use(timeout(options && options.timeout || '5s'))
+
+  if (options && options.router) {
+    app.use('/', options.router)
+  }
+  if (options && options.static) {
+    app.use(express.static(options.static))
+    app.get('*', (req, res) => {
+      res.sendFile('index.html', { root: options.static })
+    })
+  }
 }
 
 /**
@@ -100,6 +120,7 @@ const useExpress = (app, options) => {
  * @param {Object} [options=undefined] Options for creating server.
  * @param {winston.Logger} [options.logger=undefined] Logger for log output with `winston`.
  * @param {Number|String} [options.port=80] Port on which server will listen.
+ * @param {express.Router} [options.router=undefined] Router instance object to use on `express` server.
  * @param {Object} [options.session=undefined] Options for `express` `session`.
  * @param {Object} [options.session.cookie=undefined] Settings object for the `session` ID cookie.
  * @param {String} [options.session.cookie.domain=undefined] Domain to which cookie will be applied.
@@ -115,6 +136,7 @@ const useExpress = (app, options) => {
  * @param {Boolean} [options.session.saveUninitialized=true] Forces a `session` that is "uninitialized" to be saved
  * to store.
  * @param {String} [options.session.secret='^^#(^#!$'] Secret string used to sign `session` ID cookie.
+ * @param {String} [options.static=undefined] Path for static files.
  * @param {Number|String} [options.timeout='5s'] Time(milliseconds) to use for request timeout.
  * Time can be specified as string allowed by th `ms` module.
  * @param {Boolean} [options.trustProxy=false] If you have node.js behind proxy, need to set `trust proxy` in `express`.
