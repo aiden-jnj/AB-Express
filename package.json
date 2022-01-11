@@ -1,0 +1,43 @@
+{
+  "name": "ab-express",
+  "version": "0.0.1",
+  "description": "AB-Express is library that provides frequently used features on `Express` server.",
+  "keywords": [
+    "backend",
+    "common",
+    "express",
+    "library",
+    "log",
+    "logger",
+    "node",
+    "winston"
+  ],
+  "author": "Aiden <bokjaeoh@gmail.com>",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aiden-jnj/AB-Express.git"
+  },
+  "homepage": "https://github.com/aiden-jnj/AB-Express#readme",
+  "bugs": {
+    "url": "https://github.com/aiden-jnj/AB-Express/issues"
+  },
+  "engines": {
+    "node": ">= 12.14.1"
+  },
+  "main": "./src/index.js",
+  "dependencies": {
+    "compression": "^1.7.4",
+    "connect-timeout": "^1.9.0",
+    "cookie-parser": "^1.4.6",
+    "express": "^4.17.2",
+    "express-session": "^1.17.2",
+    "morgan": "^1.10.0",
+    "pug": "^3.0.2",
+    "split": "^1.0.1",
+    "winston": "^3.3.3",
+    "winston-daily-rotate-file": "^4.5.5"
+  },
+  "devDependencies": {},
+  "scripts": {}
+}
