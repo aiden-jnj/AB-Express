@@ -11,18 +11,18 @@ const { resolve } = require('path')
 const { Router } = express
 
 /**
- * Return port on which server will listen using passed options.
+ * Return port on which server will listen using passed configuration.
  * Port specified as environment variable takes precedence.
  * If port is not specified, 80 port is used.
  *
  * @private
- * @param {Object} [options=undefined] Options for creating server.
- * @param {Number|String} [options.port=80] Port on which server will listen.
+ * @param {Object} [config=undefined] Options for creating server.
+ * @param {Number|String} [config.port=80] Port on which server will listen.
  * @returns {Number|String} Port on which server will listen.
  */
-const getPort = options => {
+const getPort = config => {
   let port = process && process.env && process.env.PORT
-  port = port || options && options.port || 80
+  port = port || config && config.port || 80
   port = parseInt(port, 10)
   return isNaN(port) || port >= 0 ? port : 80
 }
@@ -32,23 +32,23 @@ const getPort = options => {
  *
  * @private
  * @param {Express} app Created `express` server.
- * @param {Object} [options=undefined] Options for creating server.
- * @param {Number|String} [options.port=80] Port on which server will listen.
- * @param {Boolean} [options.trustProxy=false] If you have node.js behind proxy, need to set `trust proxy` in `express`.
- * @param {String} [options.viewEngine='pug'] View engine to use in `express`.
- * @param {String|Array} [options.views='views'] Path where view pages to be used by `express` server are located.
+ * @param {Object} [config=undefined] Options for creating server.
+ * @param {Number|String} [config.port=80] Port on which server will listen.
+ * @param {Boolean} [config.trustProxy=false] If you have node.js behind proxy, need to set `trust proxy` in `express`.
+ * @param {String} [config.viewEngine='pug'] View engine to use in `express`.
+ * @param {String|Array} [config.views='views'] Path where view pages to be used by `express` server are located.
  */
-const setExpress = (app, options) => {
-  app.set('port', getPort(options))
-  app.set('trust proxy', options && options.trustProxy === true ? 1 : 0)
-  app.set('view engine', options && options.viewEngine || 'pug')
+const setExpress = (app, config) => {
+  app.set('port', getPort(config))
+  app.set('trust proxy', config && config.trustProxy === true ? 1 : 0)
+  app.set('view engine', config && config.viewEngine || 'pug')
 
   let path = module.parent.path
   if (module.parent.parent && module.parent.parent.path) {
     path = module.parent.parent.path
   }
   path = resolve(`${path}/views`)
-  app.set('views', options && options.views || path)
+  app.set('views', config && config.views || path)
 }
 
 /**
@@ -56,117 +56,117 @@ const setExpress = (app, options) => {
  *
  * @private
  * @param {Express} app Created `express` server.
- * @param {Object} [options=undefined] Options for creating server.
- * @param {winston.Logger} [options.logger=undefined] Logger for log output with `winston`.
- * @param {express.Router} [options.router=undefined] Router instance object to use on `express` server.
- * @param {Object} [options.session=undefined] Options for `express` `session`.
- * @param {Object} [options.session.cookie=undefined] Settings object for the `session` ID cookie.
- * @param {String} [options.session.cookie.domain=undefined] Domain to which cookie will be applied.
+ * @param {Object} [config=undefined] Options for creating server.
+ * @param {winston.Logger} [config.logger=undefined] Logger for log output with `winston`.
+ * @param {express.Router} [config.router=undefined] Router instance object to use on `express` server.
+ * @param {Object} [config.session=undefined] Options for `express` `session`.
+ * @param {Object} [config.session.cookie=undefined] Settings object for the `session` ID cookie.
+ * @param {String} [config.session.cookie.domain=undefined] Domain to which cookie will be applied.
  * By Default, no domain is set, and most clients will consider the cookie to apply to only current domain.
- * @param {Boolean} [options.session.cookie.httpOnly=true] Cookie allows to be sent only throuth HTTP(s), not client
+ * @param {Boolean} [config.session.cookie.httpOnly=true] Cookie allows to be sent only throuth HTTP(s), not client
  * JavaScript which can be protected from the Cross-Site Scripting(XSS) attack.
- * @param {Number} [options.session.cookie.maxAge=null] Specifies the number(in milliseconds) to use when calculating
+ * @param {Number} [config.session.cookie.maxAge=null] Specifies the number(in milliseconds) to use when calculating
  * expires attribute of cookie.
- * @param {String} [options.session.cookie.path='/'] Specifies value for path of cookie.
- * @param {Boolean} [options.session.cookie.secure=false] Specifies boolean value for secure attribute of cookie.
- * @param {Boolean} [options.session.resave=false] Forces the `session` to be saved back to the `session` store, even if
+ * @param {String} [config.session.cookie.path='/'] Specifies value for path of cookie.
+ * @param {Boolean} [config.session.cookie.secure=false] Specifies boolean value for secure attribute of cookie.
+ * @param {Boolean} [config.session.resave=false] Forces the `session` to be saved back to the `session` store, even if
  * `session` was never modified during the `request`.
- * @param {Boolean} [options.session.saveUninitialized=true] Forces a `session` that is "uninitialized" to be saved
+ * @param {Boolean} [config.session.saveUninitialized=true] Forces a `session` that is "uninitialized" to be saved
  * to store.
- * @param {String} [options.session.secret='^^#(^#!$'] Secret string used to sign `session` ID cookie.
- * @param {String} [options.static=undefined] Path for static files.
- * @param {Number|String} [options.timeout='5s'] Time(milliseconds) to use for request timeout.
+ * @param {String} [config.session.secret='^^#(^#!$'] Secret string used to sign `session` ID cookie.
+ * @param {String} [config.static=undefined] Path for static files.
+ * @param {Number|String} [config.timeout='5s'] Time(milliseconds) to use for request timeout.
  * Time can be specified as string allowed by th `ms` module.
- * @param {Boolean} [options.useCompression=true] Whether to enable `response` compression for `request`.
- * @param {Boolean} [options.useCookieParser=true] Whether to use `cookie-parser` library for `request` cookie parsing.
- * @param {Boolean} [options.useReqJSON=true] Whether to parse `request` into JSON format based on `body-parser`.
- * @param {Boolean} [options.useURLEncodeExtended=true] Whether to use URL query string data parsing as `qs` library.
+ * @param {Boolean} [config.useCompression=true] Whether to enable `response` compression for `request`.
+ * @param {Boolean} [config.useCookieParser=true] Whether to use `cookie-parser` library for `request` cookie parsing.
+ * @param {Boolean} [config.useReqJSON=true] Whether to parse `request` into JSON format based on `body-parser`.
+ * @param {Boolean} [config.useURLEncodeExtended=true] Whether to use URL query string data parsing as `qs` library.
  * If `true`, `qs` library that allows JSON nesting is used to analyze `reauest` query string.
  * If `false`, `querystring` library is used to analyze `reauest` query string.
  */
-const useExpress = (app, options) => {
-  if (!options || options.useCompression !== false) {
+const useExpress = (app, config) => {
+  if (!config || config.useCompression !== false) {
     app.use(compression())
   }
-  if (!options || options.useCookieParser !== false) {
+  if (!config || config.useCookieParser !== false) {
     app.use(cookieParser())
   }
-  if (!options || options.useReqJSON !== false) {
+  if (!config || config.useReqJSON !== false) {
     app.use(express.json())
   }
-  if (!options || options.useURLEncodeExtended !== false) {
+  if (!config || config.useURLEncodeExtended !== false) {
     app.use(express.urlencoded({ extended: true }))
   }
 
-  if (options && options.logger && options.logger.stream) {
-    app.use(morgan('combined', { stream: options.logger.stream }))
+  if (config && config.logger && config.logger.stream) {
+    app.use(morgan('combined', { stream: config.logger.stream }))
   } else {
     app.use(morgan('combined'))
   }
 
-  const optSession = options && options.session || {}
+  const optSession = config && config.session || {}
   if (optSession.resave === undefined) optSession.resave = false
   if (optSession.saveUninitialized === undefined) optSession.saveUninitialized = true
   if (optSession.secret === undefined) optSession.secret = '^^#(^#!$'
   app.use(session(optSession))
-  app.use(timeout(options && options.timeout || '5s'))
+  app.use(timeout(config && config.timeout || '5s'))
 
-  if (options && options.router) {
-    app.use('/', options.router)
+  if (config && config.router) {
+    app.use('/', config.router)
   }
-  if (options && options.static) {
-    app.use(express.static(options.static))
+  if (config && config.static) {
+    app.use(express.static(config.static))
     app.get('*', (req, res) => {
-      res.sendFile('index.html', { root: options.static })
+      res.sendFile('index.html', { root: config.static })
     })
   }
 }
 
 /**
- * Create `express` server using the passed options and return it.
+ * Create `express` server using the passed configuration and return it.
  *
  * @public
- * @param {Object} [options=undefined] Options for creating server.
- * @param {winston.Logger} [options.logger=undefined] Logger for log output with `winston`.
- * @param {Number|String} [options.port=80] Port on which server will listen.
- * @param {express.Router} [options.router=undefined] Router instance object to use on `express` server.
- * @param {Object} [options.session=undefined] Options for `express` `session`.
- * @param {Object} [options.session.cookie=undefined] Settings object for the `session` ID cookie.
- * @param {String} [options.session.cookie.domain=undefined] Domain to which cookie will be applied.
+ * @param {Object} [config=undefined] Options for creating server.
+ * @param {winston.Logger} [config.logger=undefined] Logger for log output with `winston`.
+ * @param {Number|String} [config.port=80] Port on which server will listen.
+ * @param {express.Router} [config.router=undefined] Router instance object to use on `express` server.
+ * @param {Object} [config.session=undefined] Options for `express` `session`.
+ * @param {Object} [config.session.cookie=undefined] Settings object for the `session` ID cookie.
+ * @param {String} [config.session.cookie.domain=undefined] Domain to which cookie will be applied.
  * By Default, no domain is set, and most clients will consider the cookie to apply to only current domain.
- * @param {Boolean} [options.session.cookie.httpOnly=true] Cookie allows to be sent only throuth HTTP(s), not client
+ * @param {Boolean} [config.session.cookie.httpOnly=true] Cookie allows to be sent only throuth HTTP(s), not client
  * JavaScript which can be protected from the Cross-Site Scripting(XSS) attack.
- * @param {Number} [options.session.cookie.maxAge=null] Specifies the number(in milliseconds) to use when calculating
+ * @param {Number} [config.session.cookie.maxAge=null] Specifies the number(in milliseconds) to use when calculating
  * expires attribute of cookie.
- * @param {String} [options.session.cookie.path='/'] Specifies value for path of cookie.
- * @param {Boolean} [options.session.cookie.secure=false] Specifies boolean value for secure attribute of cookie.
- * @param {Boolean} [options.session.resave=false] Forces the `session` to be saved back to the `session` store, even if
+ * @param {String} [config.session.cookie.path='/'] Specifies value for path of cookie.
+ * @param {Boolean} [config.session.cookie.secure=false] Specifies boolean value for secure attribute of cookie.
+ * @param {Boolean} [config.session.resave=false] Forces the `session` to be saved back to the `session` store, even if
  * `session` was never modified during the `request`.
- * @param {Boolean} [options.session.saveUninitialized=true] Forces a `session` that is "uninitialized" to be saved
+ * @param {Boolean} [config.session.saveUninitialized=true] Forces a `session` that is "uninitialized" to be saved
  * to store.
- * @param {String} [options.session.secret='^^#(^#!$'] Secret string used to sign `session` ID cookie.
- * @param {String} [options.static=undefined] Path for static files.
- * @param {Number|String} [options.timeout='5s'] Time(milliseconds) to use for request timeout.
+ * @param {String} [config.session.secret='^^#(^#!$'] Secret string used to sign `session` ID cookie.
+ * @param {String} [config.static=undefined] Path for static files.
+ * @param {Number|String} [config.timeout='5s'] Time(milliseconds) to use for request timeout.
  * Time can be specified as string allowed by th `ms` module.
- * @param {Boolean} [options.trustProxy=false] If you have node.js behind proxy, need to set `trust proxy` in `express`.
- * @param {Boolean} [options.useCompression=true] Whether to enable `response` compression for `request`.
- * @param {Boolean} [options.useCookieParser=true] Whether to use `cookie-parser` library for `request` cookie parsing.
- * @param {Boolean} [options.useReqJSON=true] Whether to parse `request` into JSON format based on `body-parser`.
- * @param {Boolean} [options.useURLEncodeExtended=true] Whether to use URL query string data parsing as `qs` library.
+ * @param {Boolean} [config.trustProxy=false] If you have node.js behind proxy, need to set `trust proxy` in `express`.
+ * @param {Boolean} [config.useCompression=true] Whether to enable `response` compression for `request`.
+ * @param {Boolean} [config.useCookieParser=true] Whether to use `cookie-parser` library for `request` cookie parsing.
+ * @param {Boolean} [config.useReqJSON=true] Whether to parse `request` into JSON format based on `body-parser`.
+ * @param {Boolean} [config.useURLEncodeExtended=true] Whether to use URL query string data parsing as `qs` library.
  * If `true`, `qs` library that allows JSON nesting is used to analyze `reauest` query string.
  * If `false`, `querystring` library is used to analyze `reauest` query string.
- * @param {String} [options.viewEngine='pug'] View engine to use in `express`.
- * @param {String|Array} [options.views='views'] Path where view pages to be used by `express` server are located.
- * @returns {Express} Express server created using passed options.
+ * @param {String} [config.viewEngine='pug'] View engine to use in `express`.
+ * @param {String|Array} [config.views='views'] Path where view pages to be used by `express` server are located.
+ * @returns {Express} Express server created using passed configuration.
  */
-const createServer = options => {
+const createServer = config => {
   const app = express()
-  setExpress(app, options)
-  useExpress(app, options)
+  setExpress(app, config)
+  useExpress(app, config)
 
-  const logger = options && options.logger || console
+  const logger = config && config.logger || console
   const server = http.createServer(app)
-  const port = getPort(options)
+  const port = getPort(config)
   server.listen(port)
 
   server.on('error', error => {
