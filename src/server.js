@@ -5,6 +5,7 @@ const express = require('express')
 const session = require('express-session')
 const http = require('http')
 const morgan = require('morgan')
+const { resolve } = require('path')
 
 
 const { Router } = express
@@ -35,11 +36,19 @@ const getPort = options => {
  * @param {Number|String} [options.port=80] Port on which server will listen.
  * @param {Boolean} [options.trustProxy=false] If you have node.js behind proxy, need to set `trust proxy` in `express`.
  * @param {String} [options.viewEngine='pug'] View engine to use in `express`.
+ * @param {String|Array} [options.views='views'] Path where view pages to be used by `express` server are located.
  */
 const setExpress = (app, options) => {
   app.set('port', getPort(options))
   app.set('trust proxy', options && options.trustProxy === true ? 1 : 0)
   app.set('view engine', options && options.viewEngine || 'pug')
+
+  let path = module.parent.path
+  if (module.parent.parent && module.parent.parent.path) {
+    path = module.parent.parent.path
+  }
+  path = resolve(`${path}/views`)
+  app.set('views', options && options.views || path)
 }
 
 /**
@@ -147,6 +156,7 @@ const useExpress = (app, options) => {
  * If `true`, `qs` library that allows JSON nesting is used to analyze `reauest` query string.
  * If `false`, `querystring` library is used to analyze `reauest` query string.
  * @param {String} [options.viewEngine='pug'] View engine to use in `express`.
+ * @param {String|Array} [options.views='views'] Path where view pages to be used by `express` server are located.
  * @returns {Express} Express server created using passed options.
  */
 const createServer = options => {
