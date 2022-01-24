@@ -1,5 +1,4 @@
-const { createLogger, createServer } = require('ab-express')
-const { Router } = require('express')
+const { createLogger, createServer, Router } = require('ab-express')
 const path = require('path')
 
 
