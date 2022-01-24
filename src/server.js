@@ -4,6 +4,7 @@ const cookieParser = require('cookie-parser')
 const express = require('express')
 const session = require('express-session')
 const http = require('http')
+const createError = require('http-errors')
 const morgan = require('morgan')
 const { resolve } = require('path')
 
@@ -57,6 +58,7 @@ const setExpress = (app, config) => {
  * @private
  * @param {Express} app Created `express` server.
  * @param {Object} [config=undefined] Options for creating server.
+ * @param {Boolean} [ignore404=false] Whether to ignore 404(Not Found) errors and use static pages.
  * @param {winston.Logger} [config.logger=undefined] Logger for log output with `winston`.
  * @param {express.Router} [config.router=undefined] Router instance object to use on `express` server.
  * @param {Object} [config.session=undefined] Options for `express` `session`.
@@ -116,10 +118,22 @@ const useExpress = (app, config) => {
   }
   if (config && config.static) {
     app.use(express.static(config.static))
-    app.get('*', (req, res) => {
-      res.sendFile('index.html', { root: config.static })
-    })
+
+    if (config.ignore404) {
+      app.get('*', (req, res) => {
+        res.sendFile('index.html', { root: config.static })
+      })
+    }
   }
+
+  app.use((req, res, next) => { next(createError(404)) })
+  app.use((err, req, res, next) => {
+    config && config.logger && config.logger.error && config.logger.error('%o', err)
+    res.locals.message = err.message
+    res.locals.error = req.app.get('env') === 'development' ? err : {}
+    res.status(err.status || 500)
+    res.render('error')
+  })
 }
 
 /**
@@ -127,6 +141,7 @@ const useExpress = (app, config) => {
  *
  * @public
  * @param {Object} [config=undefined] Options for creating server.
+ * @param {Boolean} [ignore404=false] Whether to ignore 404(Not Found) errors and use static pages.
  * @param {winston.Logger} [config.logger=undefined] Logger for log output with `winston`.
  * @param {Number|String} [config.port=80] Port on which server will listen.
  * @param {express.Router} [config.router=undefined] Router instance object to use on `express` server.
