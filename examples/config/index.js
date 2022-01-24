@@ -15,6 +15,7 @@ const cfgLog = {
 
 // Configuration for Server
 const cfgServer = {
+  ignore404: false,
   port: 3000,
   // Configuration for Session
   session: {
