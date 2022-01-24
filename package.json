@@ -1,6 +1,6 @@
 {
   "name": "ab-express",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "AB-Express is library that provides frequently used features on `Express` server.",
   "keywords": [
     "backend",

@@ -1,5 +1,4 @@
-const { createLogger, createServer } = require('ab-express')
-const { Router } = require('express')
+const { createLogger, createServer, Router } = require('ab-express')
 const path = require('path')
 
 
@@ -16,6 +15,7 @@ const cfgLog = {
 
 // Configuration for Server
 const cfgServer = {
+  ignore404: false,
   port: 3000,
   // Configuration for Session
   session: {
