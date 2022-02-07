@@ -19,12 +19,12 @@ const logFormat = config => {
   const { combine, printf, splat, timestamp } = winston.format
   let formats = []
 
-  if (!config || (config && config.splat !== false)) {
+  if (!config || (config?.splat !== false)) {
     formats.push(splat())
   }
 
   let timeFormat = 'YYYY-MM-DD HH:mm:ss.SSSS'
-  if (config && typeof config.timestamp === 'string') {
+  if (typeof config?.timestamp === 'string') {
     timeFormat = config.timestamp
   }
   formats.push(timestamp({ format: timeFormat }))
@@ -66,17 +66,17 @@ const logTransports = config => {
   let option = { format }
 
   let datePattern = 'YYYYMMDD'
-  if (config && typeof config.datePattern === 'string') {
+  if (typeof config?.datePattern === 'string') {
     datePattern = config.datePattern
   }
   option = { ...option, datePattern }
 
-  let path = module.parent.path
-  if (module.parent.parent && module.parent.parent.path) {
+  let path = module?.parent?.path
+  if (module?.parent?.parent?.path) {
     path = module.parent.parent.path
   }
   let dirname = resolve(`${path}/logs`)
-  if (config && typeof config.logPath === 'string') {
+  if (typeof config?.logPath === 'string') {
     if (config.logPath.indexOf('/') === 0) {
       dirname = resolve(`${config.logPath}`)
     } else {
@@ -87,19 +87,19 @@ const logTransports = config => {
   option = { ...option, dirname }
 
   let maxFiles = '90d'
-  if (config && typeof config.maxFiles === 'string') {
+  if (typeof config?.maxFiles === 'string') {
     maxFiles = config.maxFiles
   }
   option = { ...option, maxFiles }
 
   let maxSize = '25m'
-  if (config && typeof config.maxSize === 'string') {
+  if (typeof config?.maxSize === 'string') {
     maxSize = config.maxSize
   }
   option = { ...option, maxSize }
 
   let level = 3
-  if (config && !isNaN(config.logLevel)) {
+  if (!isNaN(config?.logLevel)) {
     level = config.logLevel > 6 ? 6 : (config.logLevel < 0 ? 0 : config.logLevel)
   }
 

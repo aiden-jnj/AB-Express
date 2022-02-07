@@ -12,6 +12,20 @@ const { resolve } = require('path')
 const { Router } = express
 
 /**
+ * Returns application root directory path.
+ *
+ * @private
+ * @returns {String} Application root directory path.
+ */
+const getBasePath = () => {
+  let path = module?.parent?.path
+  if (module?.parent?.parent?.path) {
+    path = module.parent.parent.path
+  }
+  return path
+}
+
+/**
  * Return port on which server will listen using passed configuration.
  * Port specified as environment variable takes precedence.
  * If port is not specified, 80 port is used.
@@ -22,8 +36,8 @@ const { Router } = express
  * @returns {Number|String} Port on which server will listen.
  */
 const getPort = config => {
-  let port = process && process.env && process.env.PORT
-  port = port || config && config.port || 80
+  let port = process?.env?.PORT
+  port = port || config?.port || 80
   port = parseInt(port, 10)
   return isNaN(port) || port >= 0 ? port : 80
 }
@@ -41,15 +55,9 @@ const getPort = config => {
  */
 const setExpress = (app, config) => {
   app.set('port', getPort(config))
-  app.set('trust proxy', config && config.trustProxy === true ? 1 : 0)
-  app.set('view engine', config && config.viewEngine || 'pug')
-
-  let path = module.parent.path
-  if (module.parent.parent && module.parent.parent.path) {
-    path = module.parent.parent.path
-  }
-  path = resolve(`${path}/views`)
-  app.set('views', config && config.views || path)
+  app.set('trust proxy', config?.trustProxy === true ? 1 : 0)
+  app.set('view engine', config?.viewEngine || 'pug')
+  app.set('views', config?.views || resolve(`${getBasePath()}/views`))
 }
 
 /**
@@ -76,7 +84,7 @@ const setExpress = (app, config) => {
  * @param {Boolean} [config.session.saveUninitialized=true] Forces a `session` that is "uninitialized" to be saved
  * to store.
  * @param {String} [config.session.secret='^^#(^#!$'] Secret string used to sign `session` ID cookie.
- * @param {String} [config.static=undefined] Path for static files.
+ * @param {String} [config.static='<root>/static'] Path for static files.
  * @param {Number|String} [config.timeout='5s'] Time(milliseconds) to use for request timeout.
  * Time can be specified as string allowed by th `ms` module.
  * @param {Boolean} [config.useCompression=true] Whether to enable `response` compression for `request`.
@@ -87,48 +95,48 @@ const setExpress = (app, config) => {
  * If `false`, `querystring` library is used to analyze `reauest` query string.
  */
 const useExpress = (app, config) => {
-  if (!config || config.useCompression !== false) {
+  if (!config || config?.useCompression !== false) {
     app.use(compression())
   }
-  if (!config || config.useCookieParser !== false) {
+  if (!config || config?.useCookieParser !== false) {
     app.use(cookieParser())
   }
-  if (!config || config.useReqJSON !== false) {
+  if (!config || config?.useReqJSON !== false) {
     app.use(express.json())
   }
-  if (!config || config.useURLEncodeExtended !== false) {
+  if (!config || config?.useURLEncodeExtended !== false) {
     app.use(express.urlencoded({ extended: true }))
   }
 
-  if (config && config.logger && config.logger.stream) {
+  if (config?.logger?.stream) {
     app.use(morgan('combined', { stream: config.logger.stream }))
   } else {
     app.use(morgan('combined'))
   }
 
-  const optSession = config && config.session || {}
+  const optSession = config?.session || {}
   if (optSession.resave === undefined) optSession.resave = false
   if (optSession.saveUninitialized === undefined) optSession.saveUninitialized = true
   if (optSession.secret === undefined) optSession.secret = '^^#(^#!$'
   app.use(session(optSession))
-  app.use(timeout(config && config.timeout || '5s'))
+  app.use(timeout(config?.timeout || '5s'))
 
-  if (config && config.router) {
+  if (config?.router) {
     app.use('/', config.router)
   }
-  if (config && config.static) {
-    app.use(express.static(config.static))
 
-    if (config.ignore404) {
-      app.get('*', (req, res) => {
-        res.sendFile('index.html', { root: config.static })
-      })
-    }
+  const static = config?.static || resolve(`${getBasePath()}/static`)
+  app.use(express.static(static))
+
+  if (config?.ignore404) {
+    app.get('*', (req, res) => {
+      res.sendFile('index.html', { root: static })
+    })
   }
 
   app.use((req, res, next) => { next(createError(404)) })
   app.use((err, req, res, next) => {
-    config && config.logger && config.logger.error && config.logger.error('%o', err)
+    config?.logger?.error && config.logger.error('%o', err)
     res.locals.message = err.message
     res.locals.error = req.app.get('env') === 'development' ? err : {}
     res.status(err.status || 500)
@@ -160,7 +168,7 @@ const useExpress = (app, config) => {
  * @param {Boolean} [config.session.saveUninitialized=true] Forces a `session` that is "uninitialized" to be saved
  * to store.
  * @param {String} [config.session.secret='^^#(^#!$'] Secret string used to sign `session` ID cookie.
- * @param {String} [config.static=undefined] Path for static files.
+ * @param {String} [config.static='<root>/static'] Path for static files.
  * @param {Number|String} [config.timeout='5s'] Time(milliseconds) to use for request timeout.
  * Time can be specified as string allowed by th `ms` module.
  * @param {Boolean} [config.trustProxy=false] If you have node.js behind proxy, need to set `trust proxy` in `express`.
@@ -171,7 +179,7 @@ const useExpress = (app, config) => {
  * If `true`, `qs` library that allows JSON nesting is used to analyze `reauest` query string.
  * If `false`, `querystring` library is used to analyze `reauest` query string.
  * @param {String} [config.viewEngine='pug'] View engine to use in `express`.
- * @param {String|Array} [config.views='views'] Path where view pages to be used by `express` server are located.
+ * @param {String|Array} [config.views='<root>/views'] Path where view pages to be used by `express` server are located.
  * @returns {Express} Express server created using passed configuration.
  */
 const createServer = config => {
@@ -179,19 +187,19 @@ const createServer = config => {
   setExpress(app, config)
   useExpress(app, config)
 
-  const logger = config && config.logger || console
+  const logger = config?.logger || console
   const server = http.createServer(app)
   const port = getPort(config)
   server.listen(port)
 
   server.on('error', error => {
-    if (error.syscall !== 'listen') {
-      error && error.message && logger.error && logger.error(`Server error: ${error.message}`)
+    if (error?.syscall !== 'listen') {
+      error?.message && logger.error && logger.error(`Server error: ${error.message}`)
       throw error
     }
 
     const bind = typeof port === 'string' ? `namepipe ${port}` : `${port} port`
-    switch (error.code) {
+    switch (error?.code) {
       case 'EACCESS':
         logger.error && logger.error(`Server error: ${bind} requires elevated privileges.`)
         process.exit()
@@ -199,7 +207,7 @@ const createServer = config => {
         logger.error && logger.error(`Server error: ${bind} is already in use.`)
         process.exit()
       default:
-        error && error.message && logger.error && logger.error(`Server error: ${error.message}`)
+        error?.message && logger.error && logger.error(`Server error: ${error.message}`)
         throw error
     }
   })
@@ -208,7 +216,6 @@ const createServer = config => {
     const addr = server.address()
     const bind = typeof addr === 'string' ? `namepipe ${addr}` : `${addr.port} port`
     logger.info && logger.info(`Listening on ${bind}`)
-    !logger.info && logger.log(`Listening on ${bind}`)
   })
 
   return app
