@@ -38,6 +38,10 @@
     "winston": "^3.6.0",
     "winston-daily-rotate-file": "^4.6.1"
   },
-  "devDependencies": {},
-  "scripts": {}
+  "devDependencies": {
+    "jest": "^27.5.1"
+  },
+  "scripts": {
+    "test": "jest"
+  }
 }
