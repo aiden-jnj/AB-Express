@@ -152,13 +152,13 @@ const useExpress = (app, config) => {
     logger.info(logLabel + 'use router\t\t: %o', config.router)
   }
 
-  const static = config?.static || resolve(`${getBasePath()}/static`)
-  app.use(express.static(static))
-  logger.info(logLabel + 'use static\t\t: %o\n', static)
+  const path = config?.static || resolve(`${getBasePath()}/static`)
+  app.use(express.static(path))
+  logger.info(logLabel + 'use static\t\t: %o\n', path)
 
   if (config?.ignore404) {
     app.get('*', (req, res) => {
-      res.sendFile('index.html', { root: static })
+      res.sendFile('index.html', { root: path })
     })
     logger.info(logLabel + 'ignore 404\n')
   }
