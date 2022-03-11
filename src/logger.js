@@ -24,7 +24,7 @@ const logFormat = config => {
   }
 
   let timeFormat = 'YYYY-MM-DD HH:mm:ss.SSSS'
-  if (typeof config?.timestamp === 'string') {
+  if (config?.timestamp?.constructor.name === 'String') {
     timeFormat = config.timestamp
   }
   formats.push(timestamp({ format: timeFormat }))
@@ -66,7 +66,7 @@ const logTransports = config => {
   let option = { format }
 
   let datePattern = 'YYYYMMDD'
-  if (typeof config?.datePattern === 'string') {
+  if (config?.datePattern?.constructor.name === 'String') {
     datePattern = config.datePattern
   }
   option = { ...option, datePattern }
@@ -76,7 +76,7 @@ const logTransports = config => {
     path = module.parent.parent.path
   }
   let dirname = resolve(`${path}/logs`)
-  if (typeof config?.logPath === 'string') {
+  if (config?.logPath?.constructor.name === 'String') {
     if (config.logPath.indexOf('/') === 0) {
       dirname = resolve(`${config.logPath}`)
     } else {
@@ -87,13 +87,13 @@ const logTransports = config => {
   option = { ...option, dirname }
 
   let maxFiles = '90d'
-  if (typeof config?.maxFiles === 'string') {
+  if (config?.maxFiles?.constructor.name === 'String') {
     maxFiles = config.maxFiles
   }
   option = { ...option, maxFiles }
 
   let maxSize = '25m'
-  if (typeof config?.maxSize === 'string') {
+  if (config?.maxSize?.constructor.name === 'String') {
     maxSize = config.maxSize
   }
   option = { ...option, maxSize }
