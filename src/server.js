@@ -165,7 +165,7 @@ const useExpress = (app, config) => {
 
   app.use((req, res, next) => { next(createError(404)) })
   app.use((err, req, res, next) => {
-    logger.error('%o', err)
+    err && err.status !== 404 && logger.error('%o', err)
 
     res.locals.message = err.message
     res.locals.error = req.app.get('env') === 'development' ? err : {}
