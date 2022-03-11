@@ -10,6 +10,7 @@ const { resolve } = require('path')
 
 
 const { Router } = express
+const logLabel = '[AB-Express] '
 
 /**
  * Returns application root directory path.
@@ -54,10 +55,23 @@ const getPort = config => {
  * @param {String|Array} [config.views='views'] Path where view pages to be used by `express` server are located.
  */
 const setExpress = (app, config) => {
-  app.set('port', getPort(config))
-  app.set('trust proxy', config?.trustProxy === true ? 1 : 0)
-  app.set('view engine', config?.viewEngine || 'pug')
-  app.set('views', config?.views || resolve(`${getBasePath()}/views`))
+  const logger = config?.logger || console
+
+  const port = getPort(config)
+  app.set('port', port)
+  logger.info(logLabel + 'set port\t\t: ' + port)
+
+  const trustProxy = config?.trustProxy === true ? 1 : 0
+  app.set('trust proxy', trustProxy)
+  logger.info(logLabel + 'set trust proxy\t: ' + trustProxy)
+
+  const viewEngine = config?.viewEngine || 'pug'
+  app.set('view engine', viewEngine)
+  logger.info(logLabel + 'set view engine\t: ' + viewEngine)
+
+  const views = config?.views || resolve(`${getBasePath()}/views`)
+  app.set('views', views)
+  logger.info(logLabel + 'set views\t\t: ' + views + '\n')
 }
 
 /**
@@ -95,48 +109,64 @@ const setExpress = (app, config) => {
  * If `false`, `querystring` library is used to analyze `reauest` query string.
  */
 const useExpress = (app, config) => {
+  const logger = config?.logger || console
+
   if (!config || config?.useCompression !== false) {
     app.use(compression())
+    logger.info(logLabel + 'use compression')
   }
   if (!config || config?.useCookieParser !== false) {
     app.use(cookieParser())
+    logger.info(logLabel + 'use cookieParser')
   }
   if (!config || config?.useReqJSON !== false) {
     app.use(express.json())
+    logger.info(logLabel + 'use express.json')
   }
   if (!config || config?.useURLEncodeExtended !== false) {
     app.use(express.urlencoded({ extended: true }))
+    logger.info(logLabel + 'use express.urlencoded')
   }
 
   if (config?.logger?.stream) {
     app.use(morgan('combined', { stream: config.logger.stream }))
+    logger.info(logLabel + 'use morgan with stream')
   } else {
     app.use(morgan('combined'))
+    logger.info(logLabel + 'use morgan')
   }
 
   const optSession = config?.session || {}
   if (optSession.resave === undefined) optSession.resave = false
   if (optSession.saveUninitialized === undefined) optSession.saveUninitialized = true
-  if (optSession.secret === undefined) optSession.secret = '^^#(^#!$'
+  if (optSession.secret === undefined) optSession.secret = '^#!$-&#@!'
   app.use(session(optSession))
-  app.use(timeout(config?.timeout || '5s'))
+  logger.info(logLabel + 'use session\t: %o', optSession)
+
+  const timeOut = config?.timeout || '5s'
+  app.use(timeout(timeOut))
+  logger.info(logLabel + 'use timeout\t: ' + timeOut)
 
   if (config?.router) {
     app.use('/', config.router)
+    logger.info(logLabel + 'use router\t\t: %o', config.router)
   }
 
   const static = config?.static || resolve(`${getBasePath()}/static`)
   app.use(express.static(static))
+  logger.info(logLabel + 'use static\t\t: %o\n', static)
 
   if (config?.ignore404) {
     app.get('*', (req, res) => {
       res.sendFile('index.html', { root: static })
     })
+    logger.info(logLabel + 'ignore 404\n')
   }
 
   app.use((req, res, next) => { next(createError(404)) })
   app.use((err, req, res, next) => {
-    config?.logger?.error && config.logger.error('%o', err)
+    logger.error('%o', err)
+
     res.locals.message = err.message
     res.locals.error = req.app.get('env') === 'development' ? err : {}
     res.status(err.status || 500)
@@ -179,7 +209,7 @@ const useExpress = (app, config) => {
  * If `true`, `qs` library that allows JSON nesting is used to analyze `reauest` query string.
  * If `false`, `querystring` library is used to analyze `reauest` query string.
  * @param {String} [config.viewEngine='pug'] View engine to use in `express`.
- * @param {String|Array} [config.views='<root>/views'] Path where view pages to be used by `express` server are located.
+ * @param {String|Array} [config.views='views'] Path where view pages to be used by `express` server are located.
  * @returns {Express} Express server created using passed configuration.
  */
 const createServer = config => {
@@ -194,20 +224,22 @@ const createServer = config => {
 
   server.on('error', error => {
     if (error?.syscall !== 'listen') {
-      error?.message && logger.error && logger.error(`Server error: ${error.message}`)
+      logger.error(logLabel + `Server error: ${error.message}`)
+      logger.error(logLabel + 'Server error: %o', error)
       throw error
     }
 
     const bind = typeof port === 'string' ? `namepipe ${port}` : `${port} port`
     switch (error?.code) {
       case 'EACCESS':
-        logger.error && logger.error(`Server error: ${bind} requires elevated privileges.`)
+        logger.error(logLabel + `Server error: ${bind} requires elevated privileges.`)
         process.exit()
       case 'EADDRINUSE':
-        logger.error && logger.error(`Server error: ${bind} is already in use.`)
+        logger.error(logLabel + `Server error: ${bind} is already in use.`)
         process.exit()
       default:
-        error?.message && logger.error && logger.error(`Server error: ${error.message}`)
+        logger.error(logLabel + `Server error: ${error.message}`)
+        logger.error(logLabel + 'Server error: %o', error)
         throw error
     }
   })
@@ -215,7 +247,7 @@ const createServer = config => {
   server.on('listening', () => {
     const addr = server.address()
     const bind = typeof addr === 'string' ? `namepipe ${addr}` : `${addr.port} port`
-    logger.info && logger.info(`Listening on ${bind}`)
+    logger.info(logLabel + `Listening on ${bind}\n`)
   })
 
   return app
