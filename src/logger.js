@@ -5,6 +5,8 @@ const winston = require('winston')
 const winstonDaily = require('winston-daily-rotate-file')
 
 
+const logLabel = '[AB-Express] '
+
 /**
  * Create log format(`winston.Format`) using the passed configuration and return it.
  *
@@ -19,15 +21,17 @@ const logFormat = config => {
   const { combine, printf, splat, timestamp } = winston.format
   let formats = []
 
-  if (!config || (config && config.splat !== false)) {
+  if (!config || (config?.splat !== false)) {
     formats.push(splat())
+    console.info(logLabel + 'use splat in log format')
   }
 
   let timeFormat = 'YYYY-MM-DD HH:mm:ss.SSSS'
-  if (config && typeof config.timestamp === 'string') {
+  if (config?.timestamp?.constructor.name === 'String') {
     timeFormat = config.timestamp
   }
   formats.push(timestamp({ format: timeFormat }))
+  console.info(logLabel + 'log time format\t: %o', timeFormat)
 
   formats.push(printf(({ level, message, timestamp }) => {
     return `[${timestamp} ${level.toUpperCase()}] ${message}`
@@ -66,42 +70,47 @@ const logTransports = config => {
   let option = { format }
 
   let datePattern = 'YYYYMMDD'
-  if (config && typeof config.datePattern === 'string') {
+  if (config?.datePattern?.constructor.name === 'String') {
     datePattern = config.datePattern
   }
+  console.info(logLabel + 'date pattern\t: %o', datePattern)
   option = { ...option, datePattern }
 
-  let path = module.parent.path
-  if (module.parent.parent && module.parent.parent.path) {
+  let path = module?.parent?.path
+  if (module?.parent?.parent?.path) {
     path = module.parent.parent.path
   }
   let dirname = resolve(`${path}/logs`)
-  if (config && typeof config.logPath === 'string') {
+  if (config?.logPath?.constructor.name === 'String') {
     if (config.logPath.indexOf('/') === 0) {
       dirname = resolve(`${config.logPath}`)
     } else {
       dirname = resolve(`${path}/${config.logPath}`)
     }
   }
+  console.info(logLabel + 'log path\t\t: %o', dirname)
   !existsSync(dirname) && mkdirSync(dirname)
   option = { ...option, dirname }
 
   let maxFiles = '90d'
-  if (config && typeof config.maxFiles === 'string') {
+  if (config?.maxFiles?.constructor.name === 'String') {
     maxFiles = config.maxFiles
   }
+  console.info(logLabel + 'log max files\t: %o', maxFiles)
   option = { ...option, maxFiles }
 
   let maxSize = '25m'
-  if (config && typeof config.maxSize === 'string') {
+  if (config?.maxSize?.constructor.name === 'String') {
     maxSize = config.maxSize
   }
+  console.info(logLabel + 'log max size\t: %o', maxSize)
   option = { ...option, maxSize }
 
   let level = 3
-  if (config && !isNaN(config.logLevel)) {
+  if (!isNaN(config?.logLevel)) {
     level = config.logLevel > 6 ? 6 : (config.logLevel < 0 ? 0 : config.logLevel)
   }
+  console.info(logLabel + 'log level\t\t: %o\n', maxSize)
 
   let transports = []
   for (let i = 0; i <= level; i++) {

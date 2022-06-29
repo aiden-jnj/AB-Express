@@ -10,6 +10,21 @@ const { resolve } = require('path')
 
 
 const { Router } = express
+const logLabel = '[AB-Express] '
+
+/**
+ * Returns application root directory path.
+ *
+ * @private
+ * @returns {String} Application root directory path.
+ */
+const getBasePath = () => {
+  let path = module?.parent?.path
+  if (module?.parent?.parent?.path) {
+    path = module.parent.parent.path
+  }
+  return path
+}
 
 /**
  * Return port on which server will listen using passed configuration.
@@ -22,8 +37,8 @@ const { Router } = express
  * @returns {Number|String} Port on which server will listen.
  */
 const getPort = config => {
-  let port = process && process.env && process.env.PORT
-  port = port || config && config.port || 80
+  let port = process?.env?.PORT
+  port = port || config?.port || 80
   port = parseInt(port, 10)
   return isNaN(port) || port >= 0 ? port : 80
 }
@@ -40,16 +55,23 @@ const getPort = config => {
  * @param {String|Array} [config.views='views'] Path where view pages to be used by `express` server are located.
  */
 const setExpress = (app, config) => {
-  app.set('port', getPort(config))
-  app.set('trust proxy', config && config.trustProxy === true ? 1 : 0)
-  app.set('view engine', config && config.viewEngine || 'pug')
+  const logger = config?.logger || console
 
-  let path = module.parent.path
-  if (module.parent.parent && module.parent.parent.path) {
-    path = module.parent.parent.path
-  }
-  path = resolve(`${path}/views`)
-  app.set('views', config && config.views || path)
+  const port = getPort(config)
+  app.set('port', port)
+  logger.info(logLabel + 'set port\t\t: ' + port)
+
+  const trustProxy = config?.trustProxy === true ? 1 : 0
+  app.set('trust proxy', trustProxy)
+  logger.info(logLabel + 'set trust proxy\t: ' + trustProxy)
+
+  const viewEngine = config?.viewEngine || 'pug'
+  app.set('view engine', viewEngine)
+  logger.info(logLabel + 'set view engine\t: ' + viewEngine)
+
+  const views = config?.views || resolve(`${getBasePath()}/views`)
+  app.set('views', views)
+  logger.info(logLabel + 'set views\t\t: ' + views + '\n')
 }
 
 /**
@@ -76,7 +98,7 @@ const setExpress = (app, config) => {
  * @param {Boolean} [config.session.saveUninitialized=true] Forces a `session` that is "uninitialized" to be saved
  * to store.
  * @param {String} [config.session.secret='^^#(^#!$'] Secret string used to sign `session` ID cookie.
- * @param {String} [config.static=undefined] Path for static files.
+ * @param {String} [config.static='<root>/static'] Path for static files.
  * @param {Number|String} [config.timeout='5s'] Time(milliseconds) to use for request timeout.
  * Time can be specified as string allowed by th `ms` module.
  * @param {Boolean} [config.useCompression=true] Whether to enable `response` compression for `request`.
@@ -87,48 +109,64 @@ const setExpress = (app, config) => {
  * If `false`, `querystring` library is used to analyze `reauest` query string.
  */
 const useExpress = (app, config) => {
-  if (!config || config.useCompression !== false) {
+  const logger = config?.logger || console
+
+  if (!config || config?.useCompression !== false) {
     app.use(compression())
+    logger.info(logLabel + 'use compression')
   }
-  if (!config || config.useCookieParser !== false) {
+  if (!config || config?.useCookieParser !== false) {
     app.use(cookieParser())
+    logger.info(logLabel + 'use cookieParser')
   }
-  if (!config || config.useReqJSON !== false) {
+  if (!config || config?.useReqJSON !== false) {
     app.use(express.json())
+    logger.info(logLabel + 'use express.json')
   }
-  if (!config || config.useURLEncodeExtended !== false) {
+  if (!config || config?.useURLEncodeExtended !== false) {
     app.use(express.urlencoded({ extended: true }))
+    logger.info(logLabel + 'use express.urlencoded')
   }
 
-  if (config && config.logger && config.logger.stream) {
+  if (config?.logger?.stream) {
     app.use(morgan('combined', { stream: config.logger.stream }))
+    logger.info(logLabel + 'use morgan with stream')
   } else {
     app.use(morgan('combined'))
+    logger.info(logLabel + 'use morgan')
   }
 
-  const optSession = config && config.session || {}
+  const optSession = config?.session || {}
   if (optSession.resave === undefined) optSession.resave = false
   if (optSession.saveUninitialized === undefined) optSession.saveUninitialized = true
-  if (optSession.secret === undefined) optSession.secret = '^^#(^#!$'
+  if (optSession.secret === undefined) optSession.secret = '^#!$-&#@!'
   app.use(session(optSession))
-  app.use(timeout(config && config.timeout || '5s'))
+  logger.info(logLabel + 'use session\t: %o', optSession)
 
-  if (config && config.router) {
+  const timeOut = config?.timeout || '5s'
+  app.use(timeout(timeOut))
+  logger.info(logLabel + 'use timeout\t: ' + timeOut)
+
+  if (config?.router) {
     app.use('/', config.router)
+    logger.info(logLabel + 'use router\t\t: %o', config.router)
   }
-  if (config && config.static) {
-    app.use(express.static(config.static))
 
-    if (config.ignore404) {
-      app.get('*', (req, res) => {
-        res.sendFile('index.html', { root: config.static })
-      })
-    }
+  const path = config?.static || resolve(`${getBasePath()}/static`)
+  app.use(express.static(path))
+  logger.info(logLabel + 'use static\t\t: %o\n', path)
+
+  if (config?.ignore404) {
+    app.get('*', (req, res) => {
+      res.sendFile('index.html', { root: path })
+    })
+    logger.info(logLabel + 'ignore 404\n')
   }
 
   app.use((req, res, next) => { next(createError(404)) })
   app.use((err, req, res, next) => {
-    config && config.logger && config.logger.error && config.logger.error('%o', err)
+    err && err.status !== 404 && logger.error('%o', err)
+
     res.locals.message = err.message
     res.locals.error = req.app.get('env') === 'development' ? err : {}
     res.status(err.status || 500)
@@ -160,7 +198,7 @@ const useExpress = (app, config) => {
  * @param {Boolean} [config.session.saveUninitialized=true] Forces a `session` that is "uninitialized" to be saved
  * to store.
  * @param {String} [config.session.secret='^^#(^#!$'] Secret string used to sign `session` ID cookie.
- * @param {String} [config.static=undefined] Path for static files.
+ * @param {String} [config.static='<root>/static'] Path for static files.
  * @param {Number|String} [config.timeout='5s'] Time(milliseconds) to use for request timeout.
  * Time can be specified as string allowed by th `ms` module.
  * @param {Boolean} [config.trustProxy=false] If you have node.js behind proxy, need to set `trust proxy` in `express`.
@@ -179,27 +217,29 @@ const createServer = config => {
   setExpress(app, config)
   useExpress(app, config)
 
-  const logger = config && config.logger || console
+  const logger = config?.logger || console
   const server = http.createServer(app)
   const port = getPort(config)
   server.listen(port)
 
   server.on('error', error => {
-    if (error.syscall !== 'listen') {
-      error && error.message && logger.error && logger.error(`Server error: ${error.message}`)
+    if (error?.syscall !== 'listen') {
+      logger.error(logLabel + `Server error: ${error.message}`)
+      logger.error(logLabel + 'Server error: %o', error)
       throw error
     }
 
     const bind = typeof port === 'string' ? `namepipe ${port}` : `${port} port`
-    switch (error.code) {
+    switch (error?.code) {
       case 'EACCESS':
-        logger.error && logger.error(`Server error: ${bind} requires elevated privileges.`)
+        logger.error(logLabel + `Server error: ${bind} requires elevated privileges.`)
         process.exit()
       case 'EADDRINUSE':
-        logger.error && logger.error(`Server error: ${bind} is already in use.`)
+        logger.error(logLabel + `Server error: ${bind} is already in use.`)
         process.exit()
       default:
-        error && error.message && logger.error && logger.error(`Server error: ${error.message}`)
+        logger.error(logLabel + `Server error: ${error.message}`)
+        logger.error(logLabel + 'Server error: %o', error)
         throw error
     }
   })
@@ -207,8 +247,7 @@ const createServer = config => {
   server.on('listening', () => {
     const addr = server.address()
     const bind = typeof addr === 'string' ? `namepipe ${addr}` : `${addr.port} port`
-    logger.info && logger.info(`Listening on ${bind}`)
-    !logger.info && logger.log(`Listening on ${bind}`)
+    logger.info(logLabel + `Listening on ${bind}\n`)
   })
 
   return app
